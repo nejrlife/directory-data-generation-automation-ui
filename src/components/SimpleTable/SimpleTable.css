@@ -1,0 +1,11 @@
+.simple-table > table > thead > tr > th {
+  text-align: left;
+}
+.simple-table {
+  width: 100%; /* Make the container fill its parent's width */
+  overflow-x: scroll;
+}
+.simple-table > table {
+  width: 100%;
+  overflow-x: auto;
+}

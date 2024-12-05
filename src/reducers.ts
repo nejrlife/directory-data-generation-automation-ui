@@ -7,8 +7,10 @@ const INITIAL_STATE : AppDetails = {
   processDataPending: false,
   emps: [],
   empsPending: false,
+  empsError: undefined,
   blueroomEmps: [],
   blueroomPending: false,
+  blueroomError: undefined,
   filteredSponsoredEmps: [],
   admUnsponsoredEmps: [],
   nonBlueroomIbmEmps: []
@@ -40,11 +42,22 @@ export default function appReducer(state = INITIAL_STATE, action: any) {
       return {
         ...state,
         blueroomPending: true,
+        blueroomError: undefined,
       };
     case actions.BLUEROOM_DETAILS_DATA_LOADER_END:
       return {
         ...state,
         blueroomPending: false,
+      };
+    case actions.BLUEROOM_DETAILS_FETCH_ERROR:
+      return {
+        ...state,
+        blueroomError: action?.payload?.errorMessage,
+      };
+    case actions.BLUEROOM_DETAILS_CLEAR:
+      return {
+        ...state,
+        blueroomEmps: [],
       };
     case actions.DIRECTORY_DETAILS:
       return {
@@ -55,11 +68,22 @@ export default function appReducer(state = INITIAL_STATE, action: any) {
       return {
         ...state,
         empsPending: true,
+        empsError: undefined,
       };
     case actions.DIRECTORY_DETAILS_DATA_LOADER_END:
       return {
         ...state,
-        empsPending: false,
+        empsPending: false
+      };
+    case actions.DIRECTORY_DETAILS_FETCH_ERROR:
+      return {
+        ...state,
+        empsError: action?.payload?.errorMessage,
+      };
+    case actions.DIRECTORY_DETAILS_CLEAR:
+      return {
+        ...state,
+        emps: [],
       };
     case actions.PROCESS_DATA_LOADER_START:
       return {

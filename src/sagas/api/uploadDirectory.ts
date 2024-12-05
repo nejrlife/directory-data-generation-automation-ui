@@ -1,14 +1,11 @@
 import { call } from "redux-saga/effects";
 import * as XLSX from 'xlsx';
+import { getTableUtilsSingleton } from "../../common/utils/tableUtilsSingleton";
+import { EXPORT_SHEET_NONBR_RELEVANT_COLS } from "../../constants";
+import { every, includes } from "lodash";
+import { ResponseGenerator } from "../../types";
 
-interface ResponseGenerator{
-  config?:any,
-  data?:any,
-  headers?:any,
-  request?:any,
-  status?:number,
-  statusText?:string
-}
+const tableUtils = getTableUtilsSingleton();
 
 function readFileAsArrayBuffer(file: any) {
   return new Promise((resolve, reject) => {
@@ -26,6 +23,16 @@ function readFileAsArrayBuffer(file: any) {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const json_object = XLSX.utils.sheet_to_json(sheet);
+      const excelColumnHeaders = tableUtils.getTableColumnHeadersAsString(json_object);
+      if (excelColumnHeaders?.length > 0) {
+        if (!every(EXPORT_SHEET_NONBR_RELEVANT_COLS, item => includes(excelColumnHeaders, item))) {
+          resolve({
+            data: {
+              errorMessage: "ColErr"
+            }
+          });
+        }
+      }
       resolve(json_object);
     };
     reader.onerror = function(ex) {

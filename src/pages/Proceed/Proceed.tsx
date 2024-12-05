@@ -3,8 +3,6 @@ import { connect, useDispatch } from "react-redux";
 import { Panel } from 'primereact/panel';
 import { useEffect, useState } from 'react';
 import { map, pick, mapKeys } from 'lodash'
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column'
 import { Button } from 'primereact/button'
 import { Dropdown } from "primereact/dropdown";
 import { PROCESS_DATA } from "../../sagas/constants";
@@ -12,15 +10,25 @@ import { useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import { EXPORT_SHEET_RELEVANT_COLS, EXPORT_SHEET_NONBR_RELEVANT_COLS } from '../../constants';
 import { ColorRing } from "react-loader-spinner";
+import SimpleTable from "../../components/SimpleTable/SimpleTable";
+import { getTableUtilsSingleton } from "../../common/utils/tableUtilsSingleton";
 
 const Proceed = (props: any) => {
+  const SPONSORED_LIST = "Sponsored by RROCKWE";
+  const SPONSORED_NON_BLUEROOM = "Sponsored, non-blueroom";
+  const BLUEROOM_NON_SPONSORED = "Blueroom, non-sponsored";
+
   const [filteredSponsoredEmps, setFilteredSponsoredEmps] = useState<any[]>([]);
   const [nonBlueroomIbmEmps, setNonBlueroomIbmEmps] = useState<any[]>([]);
   const [nonSponsoredButAdmEmps, setNonSponsoredButAdmEmps] = useState<any[]>([]);
+  const [empsToUse, setEmpsToUse] = useState<any[]>([]);
+
   const dispatch = useDispatch();
   const [processDataPending, setProcessDataPending] = useState<boolean>(true);
-  const [selectedFilter, setSelectedFilter] = useState<string>("Sponsored");
+  const [selectedFilter, setSelectedFilter] = useState<string>(SPONSORED_LIST);
   const navigate = useNavigate();
+
+  const tableUtils = getTableUtilsSingleton();
 
   const renameHeader = (key: string) => {
     if (key === 'Serial Number') return 'C-NUM';
@@ -92,6 +100,31 @@ const Proceed = (props: any) => {
     
   }, [props.stateEmps, props.stateBlueroomEmps, props.stateFilteredSponsoredEmps, dispatch, navigate]);
 
+  useEffect(() => {
+    if (props.stateNonBlueroomIbmEmps?.length >= 1) {
+      const filteredData: any = map(props.stateNonBlueroomIbmEmps, item => {
+          const picked = pick(item, EXPORT_SHEET_NONBR_RELEVANT_COLS)
+          return mapKeys(picked, (__, key) => {
+            return renameCorpHeader(key);
+          })
+        }
+      );
+      setNonBlueroomIbmEmps(filteredData);
+    }
+  }, [props.stateNonBlueroomIbmEmps]);
+
+  useEffect(() => {
+    if (selectedFilter === SPONSORED_LIST) {
+      setEmpsToUse(filteredSponsoredEmps);
+    } else if (selectedFilter === SPONSORED_NON_BLUEROOM) {
+      setEmpsToUse(nonBlueroomIbmEmps);
+    } else if (selectedFilter === BLUEROOM_NON_SPONSORED) {
+      setEmpsToUse(nonSponsoredButAdmEmps);
+    } else {
+      setEmpsToUse([]);
+    }
+  }, [filteredSponsoredEmps, nonBlueroomIbmEmps, nonSponsoredButAdmEmps, selectedFilter]);
+
   const onExport = () => {
     const admData = [...filteredSponsoredEmps];
     const nonBlueroomIbmData = [...nonBlueroomIbmEmps];
@@ -132,32 +165,40 @@ const Proceed = (props: any) => {
     XLSX.writeFile(workbook, 'ADM-and-NonADM-sponsored-list.xlsx');
   }
 
+  const onPressReturn = () => {
+    navigate('/generate');
+  }
+
   const headerTemplate = (options: any) => {
-    const { className, titleElement, titleClassName, toggleable, collapsed, onToggle } = options;
-    const filters = ["Sponsored", "Sponsored Non-Blueroom", "Non-Sponsored ADM"];
+    // const { className, titleElement, titleClassName, toggleable, collapsed, onToggle } = options;
+    const { className, titleClassName } = options;
+    const filters = [SPONSORED_LIST, SPONSORED_NON_BLUEROOM, BLUEROOM_NON_SPONSORED];
     return (
       <div className={className} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span className={titleClassName} style={{ fontWeight: 'bold', fontSize: '18px' }}>
-          Final Output, Blueroom list sponsored by RROCKWE
+          Final Output
         </span>
         {/* <span className={titleClassName} style={{ fontSize: '16px' }}></span> */}
         <Dropdown value={selectedFilter} onChange={(e) => setSelectedFilter(e.value)} options={filters} optionLabel="name" 
           placeholder="Select a filter" className="w-full md:w-14rem" />
-        <Button onClick={onExport} label="Export as XLS" />
+        <span>
+          <Button onClick={onExport} label="Export as XLS" className="export-button" severity="success"/>
+          <Button onClick={onPressReturn} label="Return" />
+        </span>
       </div>
     );
   };
 
-  const empsToUse = selectedFilter === 'Sponsored' ?
-    filteredSponsoredEmps :
-    (selectedFilter === 'Non-Sponsored' ? [] : nonSponsoredButAdmEmps);
   return (
     <>
       <Panel headerTemplate={headerTemplate} toggleable>
         {!processDataPending ?
           empsToUse?.length > 0 ?
             (<>
-              <p>Placeholder</p>
+              <SimpleTable
+                tableData={empsToUse}
+                tableColumns={tableUtils.getTableColumnHeaders(empsToUse)}
+              />
             </>) :
             (<>
               <p>
@@ -171,17 +212,6 @@ const Proceed = (props: any) => {
             {(<ColorRing
               height={50}
               width={50}
-              // wrapperStyle={
-              //   {
-              //     'position': 'fixed',
-              //     'top': '40%',
-              //     'left': '50%',
-              //     'zIndex': '9999',
-              //     'transition': 'opacity 0.2s',
-              //     'visibility': 'visible',
-              //     'opacity': '1'
-              //   }
-              // }
               colors={['#00CCCC', '#00CCCC', '#00CCCC', '#00CCCC', '#00CCCC']}
             />)/* <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="8" fill="var(--surface-ground)" animationDuration=".5s" /> */}
           </>)
@@ -198,8 +228,5 @@ const mapStateToProps = (state:any) => ({
   stateAdmUnsponsoredEmps: state.app.admUnsponsoredEmps,
   stateNonBlueroomIbmEmps: state.app.nonBlueroomIbmEmps
 });
-// const mapDispatchToProps  = (dispatch:any) => ({
-//   startProcessDataLoader: () => dispatch(processDataLoaderStart()),
-//   endProcessDataLoader: () => dispatch(processDataLoaderEnd())
-// });
-export default connect(mapStateToProps, null)(Proceed);
+const ConnectedProceed = connect(mapStateToProps, null)(Proceed);
+export default ConnectedProceed;

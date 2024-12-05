@@ -1,4 +1,4 @@
-import { delay, put, select } from "redux-saga/effects";
+import { put, select } from "redux-saga/effects";
 import {
   PROCESS_DATA_LOADER_START,
   PROCESS_DATA_LOADER_END,
@@ -7,19 +7,9 @@ import {
   PROCESS_DATA_SUCCESS_NON_BLUEROOM
 } from "./constants";
 import { filter, uniq, map, includes, partition } from "lodash";
-
-
-interface ResponseGenerator{
-  config?:any,
-  data?:any,
-  headers?:any,
-  request?:any,
-  status?:number,
-  statusText?:string
-}
+import { ResponseGenerator } from "../types";
 
 export function* watchHandleProcessData(action: any) {
-  console.log("something in the way");
   yield put({
     type: PROCESS_DATA_LOADER_START
   });

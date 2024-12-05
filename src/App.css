@@ -5,27 +5,3 @@
   padding-left: 1rem;
   margin-right: auto;
 }
-
-.splitterUp {
-  width: 100%;
-  max-height: 295px;
-  display: flex;
-}
-
-.splitterDown {
-  display: flex;
-}
-.splitterDownButtons {
-  padding: 15px;
-}
-.left {
-  flex: 3;
-}
-
-.right {
-  flex: 5; /* Each child takes up 50% of the width */
-}
-
-.divide {
-  flex: 2;
-}
